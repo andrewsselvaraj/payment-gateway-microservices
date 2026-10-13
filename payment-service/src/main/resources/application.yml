@@ -1,0 +1,36 @@
+server:
+  port: 8082
+  shutdown: graceful
+
+spring:
+  application:
+    name: payment-service
+  datasource:
+    url: ${DB_URL:jdbc:h2:mem:payments;DB_CLOSE_DELAY=-1}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+payment:
+  provider: ${PAYMENT_PROVIDER:mock}
+  webhook-secret: ${PAYMENT_WEBHOOK_SECRET:change-me-local-only}
+  notification-service-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
+  stripe:
+    base-url: ${STRIPE_BASE_URL:https://api.stripe.com}
+    api-key: ${STRIPE_API_KEY:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}

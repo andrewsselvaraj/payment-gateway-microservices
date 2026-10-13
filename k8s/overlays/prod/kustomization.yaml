@@ -1,0 +1,53 @@
+# Prod: HA replicas, Amazon RDS PostgreSQL, real gateway. Secrets (payment-db, order-db,
+# payment-gateway-secrets) are created out of band; see k8s/base/secrets.example.yaml.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: payments-prod
+resources:
+  - ../../base
+patches:
+  - target: { kind: ConfigMap, name: payment-gateway-config }
+    patch: |-
+      - op: replace
+        path: /data/PAYMENT_PROVIDER
+        value: stripe
+      - op: replace
+        path: /data/CORS_ALLOWED_ORIGINS
+        value: https://shop.example.com
+  - target: { kind: Deployment }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  - target: { kind: HorizontalPodAutoscaler }
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+      - op: replace
+        path: /spec/maxReplicas
+        value: 10
+  - target: { kind: Deployment }
+    patch: |-
+      - op: add
+        path: /spec/template/spec/topologySpreadConstraints
+        value:
+          - maxSkew: 1
+            topologyKey: topology.kubernetes.io/zone
+            whenUnsatisfiable: ScheduleAnyway
+            labelSelector:
+              matchLabels:
+                app.kubernetes.io/part-of: payment-gateway
+images:
+  - name: api-gateway
+    newName: quay.io/andrewsselvaraj/api-gateway
+    newTag: latest
+  - name: order-service
+    newName: quay.io/andrewsselvaraj/order-service
+    newTag: latest
+  - name: payment-service
+    newName: quay.io/andrewsselvaraj/payment-service
+    newTag: latest
+  - name: notification-service
+    newName: quay.io/andrewsselvaraj/notification-service
+    newTag: latest

@@ -1,0 +1,52 @@
+# Local end-to-end stack: docker compose up --build
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pg
+      POSTGRES_PASSWORD: pg
+    volumes:
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pg"]
+      interval: 5s
+      retries: 10
+
+  notification-service:
+    build: { context: ., args: { SERVICE: notification-service } }
+    ports: ["8083:8083"]
+
+  payment-service:
+    build: { context: ., args: { SERVICE: payment-service } }
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/payments
+      DB_USERNAME: pg
+      DB_PASSWORD: pg
+      PAYMENT_PROVIDER: mock
+      PAYMENT_WEBHOOK_SECRET: local-webhook-secret
+      NOTIFICATION_SERVICE_URL: http://notification-service:8083
+    depends_on:
+      postgres: { condition: service_healthy }
+      notification-service: { condition: service_started }
+    ports: ["8082:8082"]
+
+  order-service:
+    build: { context: ., args: { SERVICE: order-service } }
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/orders
+      DB_USERNAME: pg
+      DB_PASSWORD: pg
+      PAYMENT_SERVICE_URL: http://payment-service:8082
+    depends_on:
+      postgres: { condition: service_healthy }
+      payment-service: { condition: service_started }
+    ports: ["8081:8081"]
+
+  api-gateway:
+    build: { context: ., args: { SERVICE: api-gateway } }
+    environment:
+      ORDER_SERVICE_URL: http://order-service:8081
+      PAYMENT_SERVICE_URL: http://payment-service:8082
+      NOTIFICATION_SERVICE_URL: http://notification-service:8083
+    depends_on: [order-service, payment-service, notification-service]
+    ports: ["8080:8080"]

@@ -1,0 +1,19 @@
+# Only the gateway is exposed outside the cluster. TLS is terminated at the OpenShift router
+# (edge) using the ROSA default ingress certificate; plain HTTP is redirected to HTTPS.
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+  annotations:
+    haproxy.router.openshift.io/timeout: 30s
+spec:
+  to:
+    kind: Service
+    name: api-gateway
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

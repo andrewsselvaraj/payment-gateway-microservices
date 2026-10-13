@@ -1,0 +1,39 @@
+# Dev: single replica, in-memory H2 databases, mock gateway.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: payments-dev
+resources:
+  - ../../base
+  - dev-secrets.yaml
+patches:
+  - target: { kind: Deployment }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+  - target: { kind: HorizontalPodAutoscaler }
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+  - target: { kind: PodDisruptionBudget }
+    patch: |-
+      - op: replace
+        path: /spec/minAvailable
+        value: 0
+images:
+  - name: api-gateway
+    newName: quay.io/andrewsselvaraj/api-gateway
+    newTag: latest
+  - name: order-service
+    newName: quay.io/andrewsselvaraj/order-service
+    newTag: latest
+  - name: payment-service
+    newName: quay.io/andrewsselvaraj/payment-service
+    newTag: latest
+  - name: notification-service
+    newName: quay.io/andrewsselvaraj/notification-service
+    newTag: latest

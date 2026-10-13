@@ -1,0 +1,19 @@
+# Service account Jenkins uses to deploy into one namespace. Apply in each target namespace:
+#   oc apply -n payments-dev -f k8s/jenkins-rbac.yaml
+#   oc create token jenkins-deployer -n payments-dev --duration=8760h   # store as rosa-dev-token
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins-deployer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: jenkins-deployer-edit
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: edit
+subjects:
+  - kind: ServiceAccount
+    name: jenkins-deployer

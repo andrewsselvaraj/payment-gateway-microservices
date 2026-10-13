@@ -1,0 +1,76 @@
+# Default deny inside the namespace, then allow only the paths the architecture needs.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-router-to-gateway
+spec:
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gateway-to-services
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app, operator: In, values: [order-service, payment-service, notification-service] }
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-order-to-payment
+spec:
+  podSelector:
+    matchLabels:
+      app: payment-service
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: order-service
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-payment-to-notification
+spec:
+  podSelector:
+    matchLabels:
+      app: notification-service
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: payment-service
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring
+spec:
+  podSelector: {}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: monitoring
