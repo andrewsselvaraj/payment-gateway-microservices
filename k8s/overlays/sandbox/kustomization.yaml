@@ -37,6 +37,10 @@ patches:
       - op: replace
         path: /spec/replicas
         value: 1
+      # The Sandbox caps a project at 30 ReplicaSets, so keep no old revisions around.
+      - op: add
+        path: /spec/revisionHistoryLimit
+        value: 0
       - op: replace
         path: /spec/template/spec/containers/0/imagePullPolicy
         value: Always

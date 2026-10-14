@@ -97,6 +97,7 @@ oc start-build payment-gateway-fe --follow
 |---|---|
 | `exceeded quota` when a build or pod starts | Run builds one at a time; check usage with `oc describe quota`. Delete finished build pods with `oc delete pod --field-selector=status.phase==Succeeded`. |
 | Build fails pulling `maven`, `node` or `nginx-unprivileged` (`toomanyrequests`) | Docker Hub rate limit on the shared cluster. Wait a few minutes and run `oc start-build` again. |
+| Build finishes but the pod stays in `ImagePullBackOff`; events show `exceeded quota: ... count/replicasets.apps` | The Sandbox allows 30 ReplicaSets per project and old revisions (for example from the preinstalled `sandbox-aap-*` apps) count against it. List them with `oc get rs`, delete old ones at 0 replicas, and the Deployment rolls out on its own. |
 | Build pod `OOMKilled` | Make sure nothing else is building, then retry. |
 | Pod restarts during startup | `oc logs deploy/<service>`; a slow start is covered by a 5-minute startup probe. |
 | App was working, now all pods are at 0 | The Sandbox idles workloads after ~12 hours. `oc scale deploy --all --replicas=1`. |
