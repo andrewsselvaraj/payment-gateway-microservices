@@ -36,6 +36,9 @@ oc apply -k k8s/overlays/dev
 oc get route api-gateway -n payments-dev
 ```
 
+For the Red Hat OpenShift Developer Sandbox (one fixed project, no Jenkins), follow
+**[docs/SANDBOX-DEPLOY.md](docs/SANDBOX-DEPLOY.md)**: `oc apply -k k8s/overlays/sandbox` builds the images in-cluster.
+
 Production uses `k8s/overlays/prod` with secrets created out of band (`k8s/base/secrets.example.yaml`).
 The `Jenkinsfile` automates build, test, image push, dev deploy, smoke test and gated prod promotion.
 
@@ -46,7 +49,7 @@ api-gateway/  order-service/  payment-service/  notification-service/   Spring B
 Dockerfile                    shared multi-stage build (UBI 9 OpenJDK 21 runtime)
 docker-compose.yml            local stack
 Jenkinsfile                   CI/CD pipeline
-k8s/base, k8s/overlays/{dev,prod}   Kustomize manifests for OpenShift
+k8s/base, k8s/overlays/{dev,prod,sandbox}   Kustomize manifests for OpenShift
 k8s/jenkins-rbac.yaml         deployer service account for Jenkins
 scripts/                      smoke test, DB init
 docs/REPORT.md                project report

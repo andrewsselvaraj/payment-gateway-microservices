@@ -1,0 +1,183 @@
+# In-cluster builds from GitHub using the repo's shared Dockerfile. Each BuildConfig pushes to an
+# ImageStream with local lookup, so the Deployments' short image names resolve to the built image.
+# Start them one at a time: oc start-build <service> --follow
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: api-gateway
+  labels:
+    app: api-gateway
+spec:
+  runPolicy: Serial
+  successfulBuildsHistoryLimit: 2
+  failedBuildsHistoryLimit: 2
+  source:
+    type: Git
+    git:
+      uri: https://github.com/andrewsselvaraj/payment-gateway-microservices.git
+      ref: main
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      buildArgs:
+        - name: SERVICE
+          value: api-gateway
+  output:
+    to:
+      kind: ImageStreamTag
+      name: api-gateway:latest
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  triggers: []
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: order-service
+  labels:
+    app: order-service
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: order-service
+  labels:
+    app: order-service
+spec:
+  runPolicy: Serial
+  successfulBuildsHistoryLimit: 2
+  failedBuildsHistoryLimit: 2
+  source:
+    type: Git
+    git:
+      uri: https://github.com/andrewsselvaraj/payment-gateway-microservices.git
+      ref: main
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      buildArgs:
+        - name: SERVICE
+          value: order-service
+  output:
+    to:
+      kind: ImageStreamTag
+      name: order-service:latest
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  triggers: []
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: payment-service
+  labels:
+    app: payment-service
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: payment-service
+  labels:
+    app: payment-service
+spec:
+  runPolicy: Serial
+  successfulBuildsHistoryLimit: 2
+  failedBuildsHistoryLimit: 2
+  source:
+    type: Git
+    git:
+      uri: https://github.com/andrewsselvaraj/payment-gateway-microservices.git
+      ref: main
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      buildArgs:
+        - name: SERVICE
+          value: payment-service
+  output:
+    to:
+      kind: ImageStreamTag
+      name: payment-service:latest
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  triggers: []
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: notification-service
+  labels:
+    app: notification-service
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: notification-service
+  labels:
+    app: notification-service
+spec:
+  runPolicy: Serial
+  successfulBuildsHistoryLimit: 2
+  failedBuildsHistoryLimit: 2
+  source:
+    type: Git
+    git:
+      uri: https://github.com/andrewsselvaraj/payment-gateway-microservices.git
+      ref: main
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+      buildArgs:
+        - name: SERVICE
+          value: notification-service
+  output:
+    to:
+      kind: ImageStreamTag
+      name: notification-service:latest
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  triggers: []

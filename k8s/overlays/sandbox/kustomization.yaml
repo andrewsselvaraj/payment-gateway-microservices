@@ -1,0 +1,74 @@
+# Red Hat OpenShift Developer Sandbox: one fixed namespace, a resource quota, no cluster-admin.
+# No namespace is set, so everything lands in the current project (oc project <you>-dev).
+# Images are built in-cluster (builds.yaml) instead of pulled from quay.io. HPAs, PDBs and the
+# default-deny NetworkPolicies are dropped: the Sandbox already isolates the namespace and the
+# extra replicas would not fit the quota. Databases are in-memory H2, as in the dev overlay.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - sandbox-secrets.yaml
+  - builds.yaml
+patches:
+  - target: { kind: HorizontalPodAutoscaler }
+    patch: |-
+      $patch: delete
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: all
+  - target: { kind: PodDisruptionBudget }
+    patch: |-
+      $patch: delete
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata:
+        name: all
+  - target: { kind: NetworkPolicy }
+    patch: |-
+      $patch: delete
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: all
+  # One replica, explicit CPU limits (the quota counts them), and more startup time on a small CPU share.
+  - target: { kind: Deployment }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: Always
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: { cpu: 50m, memory: 384Mi }
+          limits: { cpu: 500m, memory: 640Mi }
+      - op: replace
+        path: /spec/template/spec/containers/0/startupProbe/failureThreshold
+        value: 60
+  - target: { kind: Deployment, name: api-gateway }
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"api-gateway:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"api-gateway\")].image"}]'
+  - target: { kind: Deployment, name: order-service }
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"order-service:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"order-service\")].image"}]'
+  - target: { kind: Deployment, name: payment-service }
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"payment-service:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"payment-service\")].image"}]'
+  - target: { kind: Deployment, name: notification-service }
+    patch: |-
+      - op: add
+        path: /metadata/annotations
+        value:
+          image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"notification-service:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"notification-service\")].image"}]'
